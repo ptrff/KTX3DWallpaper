@@ -1,4 +1,4 @@
-package ru.ptrff.ktx_3d_wallpaper
+package ru.ptrff.ktx_3d_wallpaper.wallpaper
 
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Screen

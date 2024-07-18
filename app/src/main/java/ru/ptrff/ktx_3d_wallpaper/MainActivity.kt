@@ -6,6 +6,8 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import ru.ptrff.ktx_3d_wallpaper.databinding.ActivityMainBinding
+import ru.ptrff.ktx_3d_wallpaper.vision.VisionProvider
+import ru.ptrff.ktx_3d_wallpaper.wallpaper.WallpaperService
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,8 +19,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        println()
-
         binding.setupWallpaper.setOnClickListener {
             val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
             intent.putExtra(
@@ -26,6 +26,17 @@ class MainActivity : AppCompatActivity() {
                 ComponentName(this, WallpaperService::class.java)
             )
             startActivity(intent)
+        }
+
+        binding.startWatchingFace.setOnClickListener {
+            val visProvider = VisionProvider { x, y, z ->
+                runOnUiThread {
+                    binding.eyeCoords.text = "Face coords: (${x.toInt()}, ${y.toInt()}, ${z.toInt()})"
+                    binding.eyeCoords.translationX = x
+                    binding.eyeCoords.translationY = y
+                }
+            }
+            visProvider.start(this, this)
         }
     }
 

@@ -96,11 +96,22 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // libgdx:
+    // libGDX:
     implementation(libs.gdx)
     implementation(libs.gdx.backend.android)
     "natives"(libs.gdx.box2d.platform)
     "natives"(libs.gdx.freetype.platform)
     "natives"(libs.gdx.platform)
 
+    // CameraX:
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+
+    // MediaPipe vision:
+    implementation(libs.tasks.vision)
+
+    // LifecycleService:
+    implementation(libs.androidx.lifecycle.service)
 }

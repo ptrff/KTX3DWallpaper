@@ -1,4 +1,4 @@
-package ru.ptrff.ktx_3d_wallpaper
+package ru.ptrff.ktx_3d_wallpaper.wallpaper
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
@@ -6,13 +6,17 @@ import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.PerspectiveCamera
-import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.VertexAttributes.Usage
+import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g3d.Environment
-import com.badlogic.gdx.graphics.g3d.Model
+import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.ModelInstance
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.scenes.scene2d.ui.Label
 
 class WallpaperScene : Screen {
     private lateinit var camera: PerspectiveCamera
@@ -20,6 +24,8 @@ class WallpaperScene : Screen {
     private lateinit var environment: Environment
     private lateinit var assets: AssetManager
     private lateinit var modelInstance: ModelInstance
+    private lateinit var label: Label
+    private lateinit var spriteBatch: SpriteBatch
 
     override fun show() {
         camera = PerspectiveCamera(67f, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
@@ -29,14 +35,29 @@ class WallpaperScene : Screen {
         camera.far = 300f
 
         modelBatch = ModelBatch()
-
-        environment = Environment()
+        spriteBatch = SpriteBatch()
 
         environment = Environment()
         val dirLight = DirectionalLight().set(Color.WHITE, -1f, -0.75f, -1f)
         environment.add(dirLight)
 
-        assets = AssetManager()
+        // label
+        label = Label("", Label.LabelStyle(BitmapFont(), Color.RED))
+        label.setPosition(20f, 20f)
+        label.fontScaleX = 2f
+        label.fontScaleY = 2f
+
+        //cube
+        val modelBuilder = ModelBuilder()
+        val model = modelBuilder.createBox(
+            5f, 5f, 5f,
+            Material(ColorAttribute.createDiffuse(Color.GREEN)),
+            (Usage.Position or Usage.Normal).toLong()
+        )
+
+        modelInstance = ModelInstance(model)
+
+        /*assets = AssetManager()
         assets.load("bread.obj", Model::class.java)
         assets.load("textures/Dif_dark durum bread highpoly.jpg", Texture::class.java)
         assets.finishLoading()
@@ -49,7 +70,7 @@ class WallpaperScene : Screen {
             material.set(TextureAttribute.createDiffuse(texture1))
         }
 
-        modelInstance = ModelInstance(model)
+        modelInstance = ModelInstance(model)*/
     }
 
     override fun render(delta: Float) {
@@ -62,7 +83,14 @@ class WallpaperScene : Screen {
         modelBatch.render(modelInstance, environment)
         modelBatch.end()
 
-        modelInstance.transform.rotate(0f, 1f, 0f, 1f)
+        spriteBatch.begin()
+        label.draw(spriteBatch, 1f)
+        spriteBatch.end()
+    }
+
+    fun updateFacePosition(x: Float, y: Float, z: Float) {
+        label.setText("(${x}, ${y}, ${z})")
+        modelInstance.transform.setToTranslation(-x, y, z)
     }
 
     override fun resize(width: Int, height: Int) {
