@@ -27,9 +27,12 @@ class WallpaperScene : Screen {
     private lateinit var label: Label
     private lateinit var spriteBatch: SpriteBatch
 
+    private val pid = PIDController(0.1f, 0f, 0f)
+    var facePosition = Triple(0f, 0f, 0f)
+
+
     override fun show() {
         camera = PerspectiveCamera(67f, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
-        camera.position.set(10f, 10f, 10f)
         camera.lookAt(0f, 0f, 0f)
         camera.near = 1f
         camera.far = 300f
@@ -50,33 +53,18 @@ class WallpaperScene : Screen {
         //cube
         val modelBuilder = ModelBuilder()
         val model = modelBuilder.createBox(
-            5f, 5f, 5f,
+            2f, 2f, 2f,
             Material(ColorAttribute.createDiffuse(Color.GREEN)),
             (Usage.Position or Usage.Normal).toLong()
         )
 
         modelInstance = ModelInstance(model)
-
-        /*assets = AssetManager()
-        assets.load("bread.obj", Model::class.java)
-        assets.load("textures/Dif_dark durum bread highpoly.jpg", Texture::class.java)
-        assets.finishLoading()
-
-        val model: Model = assets.get("bread.obj")
-
-        val texture1 = assets.get("textures/Dif_dark durum bread highpoly.jpg", Texture::class.java)
-
-        for (material in model.materials) {
-            material.set(TextureAttribute.createDiffuse(texture1))
-        }
-
-        modelInstance = ModelInstance(model)*/
     }
 
     override fun render(delta: Float) {
-        Gdx.gl.glViewport(0, 0, Gdx.graphics.width, Gdx.graphics.height)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
-
+        Gdx.gl.glClearColor(1f, 0.5f, 0f, 1f)
+        move(delta)
         camera.update()
 
         modelBatch.begin(camera)
@@ -88,9 +76,19 @@ class WallpaperScene : Screen {
         spriteBatch.end()
     }
 
-    fun updateFacePosition(x: Float, y: Float, z: Float) {
-        label.setText("(${x}, ${y}, ${z})")
-        modelInstance.transform.setToTranslation(-x, y, z)
+    private fun move(delta: Float) {
+        val currentPos = camera.position
+        if (delta <= 0) return
+
+        val computed = pid.compute(
+            facePosition.first, currentPos.x,
+            -facePosition.second, currentPos.y,
+            facePosition.third, currentPos.z,
+            delta
+        )
+
+        camera.position.set(computed.first, computed.second, computed.third)
+        label.setText("(${currentPos.x}, ${currentPos.y}, ${currentPos.z}) ${Gdx.graphics.framesPerSecond}")
     }
 
     override fun resize(width: Int, height: Int) {
