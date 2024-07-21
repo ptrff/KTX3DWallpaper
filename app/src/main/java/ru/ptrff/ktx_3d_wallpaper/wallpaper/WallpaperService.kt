@@ -53,8 +53,7 @@ class WallpaperService : AndroidLiveWallpaperService(), LifecycleOwner {
         val wallpaperScene = WallpaperScene()
 
         VisionProvider { x, y, z ->
-            //println("($x, $y, $z)")
-            wallpaperScene.facePosition = Triple(x/50, y/50, z/10)
+            wallpaperScene.facePosition = Triple(x / 50, y / 50, z / 10)
         }.start(baseContext, this)
 
         initialize(WallpaperScreen(wallpaperScene), config)

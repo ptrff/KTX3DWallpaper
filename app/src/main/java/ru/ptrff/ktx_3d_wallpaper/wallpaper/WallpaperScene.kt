@@ -16,19 +16,21 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.scenes.scene2d.ui.Label
+import kotlin.random.Random
 
 class WallpaperScene : Screen {
     private lateinit var camera: PerspectiveCamera
     private lateinit var modelBatch: ModelBatch
     private lateinit var environment: Environment
     private lateinit var assets: AssetManager
-    private lateinit var modelInstance: ModelInstance
+    private lateinit var modelInstances: List<ModelInstance>
     private lateinit var label: Label
     private lateinit var spriteBatch: SpriteBatch
 
     private val pid = PIDController(0.1f, 0f, 0f)
-    var facePosition = Triple(0f, 0f, 0f)
+    var facePosition = Triple(0f, 0f, 10f)
 
 
     override fun show() {
@@ -40,9 +42,10 @@ class WallpaperScene : Screen {
         modelBatch = ModelBatch()
         spriteBatch = SpriteBatch()
 
-        environment = Environment()
-        val dirLight = DirectionalLight().set(Color.WHITE, -1f, -0.75f, -1f)
-        environment.add(dirLight)
+        environment = Environment().apply {
+            add(DirectionalLight().set(Color.WHITE, Vector3(-0.6f, -0.3f, -0.65f)))
+            add(DirectionalLight().set(Color.WHITE, Vector3(0.3f, 0.7f, 0.4f)))
+        }
 
         // label
         label = Label("", Label.LabelStyle(BitmapFont(), Color.RED))
@@ -50,15 +53,8 @@ class WallpaperScene : Screen {
         label.fontScaleX = 2f
         label.fontScaleY = 2f
 
-        //cube
-        val modelBuilder = ModelBuilder()
-        val model = modelBuilder.createBox(
-            2f, 2f, 2f,
-            Material(ColorAttribute.createDiffuse(Color.GREEN)),
-            (Usage.Position or Usage.Normal).toLong()
-        )
-
-        modelInstance = ModelInstance(model)
+        // init models
+        createModels()
     }
 
     override fun render(delta: Float) {
@@ -68,7 +64,7 @@ class WallpaperScene : Screen {
         camera.update()
 
         modelBatch.begin(camera)
-        modelBatch.render(modelInstance, environment)
+        modelInstances.forEach { modelBatch.render(it, environment) }
         modelBatch.end()
 
         spriteBatch.begin()
@@ -77,18 +73,80 @@ class WallpaperScene : Screen {
     }
 
     private fun move(delta: Float) {
-        val currentPos = camera.position
-        if (delta <= 0) return
-
         val computed = pid.compute(
-            facePosition.first, currentPos.x,
-            -facePosition.second, currentPos.y,
-            facePosition.third, currentPos.z,
+            facePosition.first * 2, camera.position.x,
+            -facePosition.second * 2 + 2, camera.position.y,
+            facePosition.third * 3 + 70, camera.position.z,
             delta
         )
 
         camera.position.set(computed.first, computed.second, computed.third)
-        label.setText("(${currentPos.x}, ${currentPos.y}, ${currentPos.z}) ${Gdx.graphics.framesPerSecond}")
+        label.setText("(${camera.position.x}, ${camera.position.y}, ${camera.position.z}) ${Gdx.graphics.framesPerSecond}")
+    }
+
+    private fun createModels() {
+        val modelBuilder = ModelBuilder()
+        val instances = mutableListOf<ModelInstance>()
+
+        val cubeModel = modelBuilder.createBox(
+            5f, 5f, 20f,
+            Material(ColorAttribute.createDiffuse(Color.CHARTREUSE)),
+            (Usage.Position or Usage.Normal).toLong()
+        )
+
+        val planeModel = modelBuilder.createBox(
+            50f, 100f, 1f,
+            Material(ColorAttribute.createDiffuse(Color.GRAY)),
+            (Usage.Position or Usage.Normal).toLong()
+        )
+
+        val wallModel = modelBuilder.createBox(
+            0.1f, 100f, 500f,
+            Material(ColorAttribute.createDiffuse(Color.DARK_GRAY)),
+            (Usage.Position or Usage.Normal).toLong()
+        )
+
+        // abstract statue
+        for (y in 0..2) {
+            for (x in 0..(2 - y)) {
+                val instance = ModelInstance(cubeModel).apply {
+                    transform.setToTranslation(
+                        x * 5f * Random.nextInt(-2, 2).toFloat(),
+                        x * 5f * Random.nextInt(-2, 2).toFloat(),
+                        y * 20f
+                    )
+                    transform.rotate(Vector3.Z, Random.nextInt(1, 180).toFloat())
+                    transform.rotate(Vector3.Y, Random.nextInt(-45, 45).toFloat())
+                    transform.rotate(Vector3.X, Random.nextInt(-15, 15).toFloat())
+                }
+                instances.add(instance)
+            }
+        }
+        instances.add(ModelInstance(planeModel))
+
+        val wall1 = ModelInstance(wallModel).apply {
+            transform.setToTranslation(25f, 0f, 0f)
+        }
+        instances.add(wall1)
+
+        val wall2 = ModelInstance(wallModel).apply {
+            transform.setToTranslation(-25f, 0f, 0f)
+        }
+        instances.add(wall2)
+
+        val wall3 = ModelInstance(wallModel).apply {
+            transform.setToTranslation(0f, 50f, 0f)
+            transform.rotate(Vector3.Z, 90f)
+        }
+        instances.add(wall3)
+
+        val wall4 = ModelInstance(wallModel).apply {
+            transform.setToTranslation(0f, -50f, 0f)
+            transform.rotate(Vector3.Z, 90f)
+        }
+        instances.add(wall4)
+
+        modelInstances = instances
     }
 
     override fun resize(width: Int, height: Int) {
@@ -108,6 +166,8 @@ class WallpaperScene : Screen {
     }
 
     override fun dispose() {
+        modelInstances.forEach { it.model.dispose() }
         modelBatch.dispose()
+        spriteBatch.dispose()
     }
 }
